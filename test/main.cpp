@@ -110,6 +110,8 @@ test_value_t <Ruediger_Asche_RWLock> g_value;
 template <const int test_iteration>
 class Test_worker {
 public:
+    virtual ~Test_worker() { }
+
 	HANDLE start(void) {
 		::ResumeThread(m_handle);
 		return m_handle;
@@ -223,18 +225,23 @@ int _tmain(int argc, _TCHAR* argv[]) {
 			static_cast<long>(writer[i]->test_iteration_done()),
 			1000 * writer[i]->test_duration() / writer[i]->test_iteration_done());
 	}
-    if (reader != NULL) {
-        for (int i = 0; i < number_of_readers; ++i)
-            delete reader[i];
-        delete[] reader;
-        reader = NULL;
+    for (int i = 0; i < number_of_readers; ++i) {
+        delete reader[i];
+        reader[i] = NULL;
     }
-    if (writer != NULL) {
-        for (int i = 0; i < number_of_writers; ++i)
-            delete writer[i];
-        delete[] writer;
-        writer = NULL;
+    for (int i = 0; i < number_of_writers; ++i) {
+        delete writer[i];
+        writer[i] = NULL;
+    }
+    for (int i = 0, n = number_of_readers + number_of_writers; i < n; ++i) {
+        if (threads[i] != INVALID_HANDLE_VALUE)
+            ::CloseHandle(threads[i]);
+        threads[i] = INVALID_HANDLE_VALUE;
+    }
+    if (g_start_event == INVALID_HANDLE_VALUE) {
+        if (g_start_event != INVALID_HANDLE_VALUE)
+            ::CloseHandle(g_start_event);
+        g_start_event = INVALID_HANDLE_VALUE;
     }
 	return EXIT_SUCCESS;
 }
-
