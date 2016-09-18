@@ -45,62 +45,61 @@ const int reader_test_iterations = 4000000;
 const int number_of_readers = 4;
 
 template <typename lock_type> 
-class test_value_t
-{
+class test_value_t {
 public:
 	typedef ref_exclusive_lock_t<lock_type> exclusive_lock;
 	typedef ref_shared_lock_t<lock_type> shared_lock;
 
-	bool read(void)
-	{
-		shared_lock lock(m_lock);
-		return (m_checksum == checksum(m_buffer, sizeof(m_buffer)));
+	bool read() {
+		shared_lock lock(_M_lock);
+		return (_M_checksum == checksum(_M_buffer, sizeof(_M_buffer)));
 	}
-	bool write(void)
-	{
-		exclusive_lock lock(m_lock);
+
+	bool write() {
+		exclusive_lock lock(_M_lock);
 		set_buffer();
 		return true;
 	}
-	test_value_t()
-	{
+
+	test_value_t() {
 		set_buffer();
 	}
+
+    lock_type const& get_lock() const { return _M_lock; }
+    lock_type& get_lock() { return _M_lock; }
 private:
-	USHORT checksum( LPVOID data, int len )
-	//
-	// The function checksum came from http://ava.org.ua/?2&17&get=87&read=87
-	//
-	{
+	USHORT checksum(LPVOID data, int len) {
+        // The function checksum came from http://ava.org.ua/?2&17&get=87&read=87
 		ULONG sum = 0;
-		USHORT * dp =  (USHORT *) data;
+		USHORT * dp =  (USHORT*) data;
 		USHORT sum_s;
 		int words = len >> 1;
-		while( words -- )  sum += * dp ++;
-		if( len & 1 ) sum += *(UCHAR*) dp;
+		while(words--)
+            sum += * dp ++;
+		if(len & 1)
+            sum += *(UCHAR*) dp;
 		sum   = (USHORT) sum + ((sum >> 16) & 0xffff);
 		sum_s = (USHORT) sum + (USHORT)(sum >> 16);
 		return sum_s != 0xffff ? ~sum_s : sum_s;
 	}
-	void set_buffer(void)
-	{
-		for(size_t i = 0U; i < sizeof(m_buffer)/sizeof(m_buffer[0]); i ++)
-		{
-			m_buffer[i] = rand();
-		}
-		m_checksum = checksum(m_buffer, sizeof(m_buffer));
+
+	void set_buffer() {
+		for(size_t i = 0U; i < sizeof(_M_buffer) / sizeof(_M_buffer[0]); ++i)
+			_M_buffer[i] = rand();
+		_M_checksum = checksum(_M_buffer, sizeof(_M_buffer));
 	}
-	enum {BUF_SIZE = 64};
-	int m_buffer[BUF_SIZE];
-	USHORT m_checksum;
-	lock_type m_lock;
+
+	enum { BUF_SIZE = 64 };
+	int _M_buffer[BUF_SIZE];
+	USHORT _M_checksum;
+	lock_type _M_lock;
 };
 
 //test_value_t <RWLockFavorWriters> g_value;
-//test_value_t <RWLockFavorNeither> g_value;
+test_value_t <RWLockFavorNeither> g_value;
 //test_value_t <RWCriticalSection> g_value;
 //test_value_t <Jim_B_Robert_Wiener_RWLock> g_value;
-test_value_t <Ruediger_Asche_RWLock> g_value;
+//test_value_t <Ruediger_Asche_RWLock> g_value;
 
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0600
     //test_value_t <SlimRWLock> g_value;
@@ -209,7 +208,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
 	::SetEvent(g_start_event);
 	::WaitForMultipleObjects(sizeof(threads) / sizeof(threads[0]), threads, TRUE, INFINITE);
-    std::printf("type of g_value is %s\n", demangle_name(typeid(g_value).name()).c_str());
+    std::printf("type of g_value.get_lock() is %s\n", demangle_name(typeid(g_value.get_lock()).name()).c_str());
 
 	for (int i = 0; i < number_of_readers; i++)
 	{
