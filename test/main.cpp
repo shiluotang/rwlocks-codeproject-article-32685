@@ -186,8 +186,7 @@ class Reader: public Test_worker <reader_test_iterations>
 	}
 };
 
-int _tmain(int , _TCHAR**)
-{
+int _tmain(int argc, _TCHAR* argv[]) {
 	g_start_event = ::CreateEvent(NULL,TRUE,FALSE,NULL);
 
 	HANDLE threads[number_of_writers + number_of_readers];
@@ -207,24 +206,35 @@ int _tmain(int , _TCHAR**)
 	}
 
 	::SetEvent(g_start_event);
-	::WaitForMultipleObjects(sizeof(threads)/sizeof(threads[0]), threads, TRUE, INFINITE);
+	::WaitForMultipleObjects(sizeof(threads) / sizeof(threads[0]), threads, TRUE, INFINITE);
     std::printf("type of g_value is %s\n", demangle_name(typeid(g_value).name()).c_str());
 
 	for (int i = 0; i < number_of_readers; i++)
 	{
-		printf("reader iterations done | per operation(ms),%10ld,%17f\n",
+        std::printf("reader iterations done | per operation(ms),%10ld,%17f\n",
 			static_cast<long>(reader[i]->test_iteration_done()),
-			1000*reader[i]->test_duration()/reader[i]->test_iteration_done());
+			1000 * reader[i]->test_duration() / reader[i]->test_iteration_done());
 
 	}
 
 	for (int i = 0; i < number_of_writers; i++)
 	{
-		printf("writer iterations done | per operation(ms),%10ld,%17f\n",
+        std::printf("writer iterations done | per operation(ms),%10ld,%17f\n",
 			static_cast<long>(writer[i]->test_iteration_done()),
-			1000*writer[i]->test_duration()/writer[i]->test_iteration_done());
+			1000 * writer[i]->test_duration() / writer[i]->test_iteration_done());
 	}
-
-	return 0;
+    if (reader != NULL) {
+        for (int i = 0; i < number_of_readers; ++i)
+            delete reader[i];
+        delete[] reader;
+        reader = NULL;
+    }
+    if (writer != NULL) {
+        for (int i = 0; i < number_of_writers; ++i)
+            delete writer[i];
+        delete[] writer;
+        writer = NULL;
+    }
+	return EXIT_SUCCESS;
 }
 
