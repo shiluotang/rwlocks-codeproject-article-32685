@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 AM_CPPFLAGS = -Wall
-AM_CFLAGS	=
+AM_CFLAGS   =
 AM_CXXFLAGS =
 
 lib_LTLIBRARIES = librwlocks.la
