@@ -1,6 +1,10 @@
 #include "../src/stdafx.h" 
 #include <windows.h>
 
+#ifdef HAVE_CONFIG_H
+#   include <config.h>
+#endif
+
 #include "../src/perf_counter.h"
 #include "../src/rwlock.h"
 #include "../src/RWCriticalSection.h"
@@ -13,6 +17,24 @@
 #include "../src/Jim_B_Robert_Wiener_RWLock.h"
 
 #include <typeinfo>
+#ifdef HAVE_GCC_ABI_DEMANGLE
+#   include <cxxabi.h>
+#   include <cstdlib>
+#endif
+
+std::string demangle_name(char const* const mangled_name) {
+#ifdef HAVE_GCC_ABI_DEMANGLE
+    int status = 0;
+    char *demangled = NULL;
+    std::string name;
+    demangled = abi::__cxa_demangle(mangled_name, 0, 0, &status);
+    name.assign(demangled);
+    std::free(demangled);
+    return name;
+#else
+    return mangled_name;
+#endif
+}
 
 HANDLE g_start_event;
 volatile long g_stop_test;
@@ -76,10 +98,10 @@ private:
 
 //test_value_t <RWLockFavorWriters> g_value;
 //test_value_t <RWLockFavorNeither> g_value;
-test_value_t <RWCriticalSection> g_value;
+//test_value_t <RWCriticalSection> g_value;
 //test_value_t <Jim_B_Robert_Wiener_RWLock> g_value;
-//test_value_t <Ruediger_Asche_RWLock> g_value;
-//
+test_value_t <Ruediger_Asche_RWLock> g_value;
+
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0600
     //test_value_t <SlimRWLock> g_value;
 #endif
@@ -186,7 +208,7 @@ int _tmain(int , _TCHAR**)
 
 	::SetEvent(g_start_event);
 	::WaitForMultipleObjects(sizeof(threads)/sizeof(threads[0]), threads, TRUE, INFINITE);
-    std::printf("type of g_value is %s\n", typeid(g_value).name());
+    std::printf("type of g_value is %s\n", demangle_name(typeid(g_value).name()).c_str());
 
 	for (int i = 0; i < number_of_readers; i++)
 	{
