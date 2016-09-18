@@ -107,82 +107,62 @@ test_value_t <RWLockFavorNeither> g_value;
 
 
 template <const int test_iteration>
-class Test_worker {
+class TestWorker {
 public:
-    virtual ~Test_worker() { }
+    virtual ~TestWorker() { }
 
-	HANDLE start(void) {
-		::ResumeThread(m_handle);
-		return m_handle;
+	HANDLE start() {
+		::ResumeThread(_M_handle);
+		return _M_handle;
 	}
 
-	double test_duration(void) {
-		return m_perf_counter.get_duration();
+	double test_duration() {
+		return _M_perf_counter.get_duration();
 	}
 
-	LONGLONG test_iteration_done(void) {
-		return m_perf_counter.get_counter();
+	LONGLONG test_iteration_done() {
+		return _M_perf_counter.get_counter();
 	}
 
 private:
-	static DWORD WINAPI worker_proc(LPVOID lpParam)
-	{
-		Test_worker& worker = *reinterpret_cast<Test_worker*>(lpParam);
+	static DWORD WINAPI worker_proc(LPVOID lpParam) {
+		TestWorker& worker = *reinterpret_cast<TestWorker*>(lpParam);
 		::WaitForSingleObject(g_start_event, INFINITE );
 
-		worker.m_perf_counter.start();
-		int i;
-
-		for (i = 0; i < test_iteration; i++)
-		{
-			if( false == worker.simulate_work() )
-			{
+		worker._M_perf_counter.start();
+        int i;
+		for (i = 0; i < test_iteration; ++i) {
+			if(!worker.simulate_work())
 				::RaiseException( STATUS_NONCONTINUABLE_EXCEPTION, 0, 0, 0);
- 			}
-			else
-			{
-			}
-
 			if (TRUE == g_stop_test)
-			{
 				break;
-			}
-			else
-			{
-			}
-
 		}
 		
-		worker.m_perf_counter.end();
+		worker._M_perf_counter.end();
 		::InterlockedExchange(&g_stop_test, TRUE);
-		worker.m_perf_counter.set_iteration_done(i);
+		worker._M_perf_counter.set_iteration_done(i);
 		return 0;
 	}
 
-	virtual bool simulate_work(void)=0;
+	virtual bool simulate_work() = 0;
 
-	HANDLE m_handle;
-	Performance_counter_meter m_perf_counter;
-	Test_worker & operator=( const Test_worker & ) {}
+	HANDLE _M_handle;
+	PerformanceCounterMeter _M_perf_counter;
+	TestWorker& operator = (TestWorker const&) {}
 protected:
-	Test_worker()
-	{
-		m_handle = ::CreateThread(NULL,0, worker_proc, (LPVOID)this, CREATE_SUSPENDED, NULL);
+	TestWorker() {
+		_M_handle = ::CreateThread(NULL, 0, worker_proc, (LPVOID)this, CREATE_SUSPENDED, NULL);
 	}
 };
 
-class Writer: public Test_worker <writer_test_iterations>
-{
-	virtual bool simulate_work(void)
-	{
+class Writer: public TestWorker <writer_test_iterations> {
+	virtual bool simulate_work() {
 		return g_value.write();
 	}
 };
 
-class Reader: public Test_worker <reader_test_iterations>
-{
-	virtual bool simulate_work(void)
-	{
+class Reader: public TestWorker <reader_test_iterations> {
+	virtual bool simulate_work() {
 		return g_value.read();
 	}
 };
