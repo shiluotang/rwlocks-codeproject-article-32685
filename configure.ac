@@ -22,6 +22,7 @@ LT_INIT
 # Checks for libraries.
 
 # Checks for header files.
+AX_CXX_GCC_ABI_DEMANGLE
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
